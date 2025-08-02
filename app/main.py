@@ -1,6 +1,8 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api import routes
+from app.core.config import settings
 
 app = FastAPI()
 
@@ -13,16 +15,10 @@ else:
 
 app.add_middleware( 
     CORSMiddleware,
-    allow_origins=origins,  # or restrict to your frontend domain
+    allow_origins=settings.ALLOWED_ORIGINS,  # or restrict to your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@app.post("/")
-async def post():
-    return {"message": "Item created"}
+app.include_router(routes.router)
