@@ -1,4 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, UploadFile, File
+from sqlalchemy.orm import Session
+from app.schemas.grading import GradingRequest
+from app.schemas.grading_result import GradingResult as GradingResultSchema
+from app.services import grading_service
+from . import deps
+from typing import List
 
 router = APIRouter()
 
@@ -6,7 +12,18 @@ router = APIRouter()
 def read_root():
     return {"message": "FastAPI is connected!"}
 
-@router.get("/grade")
-async def get_grade():
-    # Query db to see if 
-    return {"message": "Item created"}
+@router.post("/grade")
+async def grade_assignment_endpoint(request: GradingRequest, db: Session = Depends(deps.get_db)):
+    return await grading_service.grade_assignment(request, db)
+
+@router.post("/assignments/{assignment_name}/criteria")
+async def upload_criteria(
+    assignment_name: str, 
+    criteria_file: UploadFile = File(...),
+    db: Session = Depends(deps.get_db)
+):
+    return await grading_service.save_criteria(assignment_name, criteria_file, db)
+
+@router.get("/grades", response_model=List[GradingResultSchema])
+async def get_grades(db: Session = Depends(deps.get_db)):
+    return await grading_service.get_all_grades(db)
