@@ -27,3 +27,7 @@ async def upload_criteria(
 @router.get("/grades", response_model=List[GradingResultSchema])
 async def get_grades(db: Session = Depends(deps.get_db)):
     return await grading_service.get_all_grades(db)
+
+@router.get("/grades/{student_name}", response_model=List[GradingResultSchema])
+async def get_student_grades(student_name: str, db: Session = Depends(deps.get_db)):
+    return await grading_service.get_grades_by_student(student_name, db)

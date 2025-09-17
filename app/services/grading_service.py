@@ -122,3 +122,17 @@ async def get_all_grades(db: Session):
             )
         )
     return response
+
+async def get_grades_by_student(student_name: str, db: Session):
+    results = db.query(models.GradingResult).filter(models.GradingResult.student_id == student_name).options(joinedload(models.GradingResult.assignment)).all()
+    response = []
+    for result in results:
+        response.append(
+            GradingResultSchema(
+                assignment_name=result.assignment.name,
+                student_id=result.student_id,
+                grade=result.grade,
+                feedback=result.feedback,
+            )
+        )
+    return response
