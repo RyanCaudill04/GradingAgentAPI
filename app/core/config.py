@@ -5,10 +5,10 @@ class Settings(BaseSettings):
     ENV: str = "development"
     ALLOWED_ORIGINS: list[str] = ["http://localhost:8000"]
 
-    POSTGRES_USER: str = "grader"
-    POSTGRES_PASSWORD: str = "grader"
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_DB: str = "grader"
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_SERVER: str = "db"
+    POSTGRES_DB: str = "postgres"
     POSTGRES_PORT: int = 5432
 
     @property
