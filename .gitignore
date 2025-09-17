@@ -1,6 +1,20 @@
-venv
-__pycache__
+# Python
+__pycache__/
 *.pyc
-*.pyo
 *.pyd
-*.pdb
+*.pyo
+*.egg-info/
+.Python
+
+# Virtual environment
+venv/
+.env
+
+# IDEs
+.idea/
+.vscode/
+
+# OS generated files
+.DS_Store
+.Trashes
+Thumbs.db
