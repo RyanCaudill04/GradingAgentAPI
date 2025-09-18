@@ -1,11 +1,24 @@
 from fastapi import UploadFile, HTTPException
 from sqlalchemy.orm import Session, joinedload
-from app.schemas.grading import GradingRequest
+from app.schemas.grading import GradingRequest, AssignmentCreate
 from app.db import models
 from app.schemas.grading_result import GradingResult as GradingResultSchema
 import tempfile
 import subprocess
 import os
+import docx
+
+import docx
+
+async def create_assignment(request: AssignmentCreate, db: Session):
+    db_assignment = db.query(models.Assignment).filter(models.Assignment.name == request.assignment_name).first()
+    if db_assignment:
+        raise HTTPException(status_code=400, detail="Assignment already exists")
+    new_assignment = models.Assignment(name=request.assignment_name)
+    db.add(new_assignment)
+    db.commit()
+    db.refresh(new_assignment)
+    return new_assignment
 
 async def save_criteria(assignment_name: str, criteria_file: UploadFile, db: Session):
     assignment = db.query(models.Assignment).filter(models.Assignment.name == assignment_name).first()
@@ -15,12 +28,25 @@ async def save_criteria(assignment_name: str, criteria_file: UploadFile, db: Ses
         db.commit()
         db.refresh(assignment)
 
-    criteria_text = await criteria_file.read()
+    file_extension = criteria_file.filename.split('.')[-1]
+    if file_extension not in ['txt', 'docx']:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only .txt and .docx files are allowed.")
+
+    if file_extension == 'docx':
+        try:
+            doc = docx.Document(criteria_file.file)
+            criteria_text = "\n".join([para.text for para in doc.paragraphs])
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error processing .docx file: {e}")
+    else:
+        criteria_text_bytes = await criteria_file.read()
+        criteria_text = criteria_text_bytes.decode("utf-8")
+
     criteria = db.query(models.Criteria).filter(models.Criteria.assignment_id == assignment.id).first()
     if criteria:
-        criteria.text = criteria_text.decode("utf-8")
+        criteria.text = criteria_text
     else:
-        criteria = models.Criteria(assignment_id=assignment.id, text=criteria_text.decode("utf-8"))
+        criteria = models.Criteria(assignment_id=assignment.id, text=criteria_text)
         db.add(criteria)
     
     db.commit()

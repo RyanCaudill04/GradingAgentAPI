@@ -11,8 +11,12 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "postgres"
     POSTGRES_PORT: int = 5432
 
+    DATABASE_URL: str | None = None
+
     @property
-    def DATABASE_URL(self) -> PostgresDsn:
+    def DATABASE_URL_USED(self) -> str:
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     class Config:

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
-from app.schemas.grading import GradingRequest
+from app.schemas.grading import GradingRequest, AssignmentCreate
 from app.schemas.grading_result import GradingResult as GradingResultSchema
 from app.services import grading_service
 from . import deps
@@ -15,6 +15,10 @@ def read_root():
 @router.post("/grade")
 async def grade_assignment_endpoint(request: GradingRequest, db: Session = Depends(deps.get_db)):
     return await grading_service.grade_assignment(request, db)
+
+@router.post("/assignments")
+async def create_assignment_endpoint(request: AssignmentCreate, db: Session = Depends(deps.get_db)):
+    return await grading_service.create_assignment(request, db)
 
 @router.post("/assignments/{assignment_name}/criteria")
 async def upload_criteria(
