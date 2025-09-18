@@ -1,18 +1,28 @@
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 import subprocess
+import json
 
 def test_grade_assignment_success(client: TestClient):
     # Create assignment and criteria
     assignment_name = "Test Assignment"
     client.post("/assignments", json={"assignment_name": assignment_name})
+
+    criteria = [
+        {
+            "pattern": "Test",
+            "deduction": 10,
+            "message": "Use of Test class"
+        }
+    ]
+
     client.post(
         f"/assignments/{assignment_name}/criteria",
         files={
             "criteria_file": (
-                "criteria.txt",
-                "Test criteria".encode("utf-8"),
-                "text/plain"
+                "criteria.json",
+                json.dumps(criteria).encode("utf-8"),
+                "application/json"
             )
         }
     )
@@ -40,6 +50,8 @@ def test_grade_assignment_success(client: TestClient):
     response_json = response.json()
     assert response_json["message"] == "Assignment analysis complete."
     assert response_json["grading_result"]["grade"] == 90
+    assert "Use of Test class" in response_json["grading_result"]["feedback"]
+
 
 def test_grade_assignment_no_criteria(client: TestClient):
     response = client.post(

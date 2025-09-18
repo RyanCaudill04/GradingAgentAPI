@@ -55,23 +55,64 @@ def test_create_assignment(client: TestClient):
     assert response.status_code == 400
     assert response.json() == {"detail": "Assignment already exists"}
 
-def test_upload_criteria_txt(client: TestClient):
+def test_upload_criteria_json(client: TestClient):
     assignment_name = "Test Assignment 2"
     client.post("/assignments", json={"assignment_name": assignment_name})
     
-    criteria_content = "This is a test criteria for a text file."
+    criteria_content = '[{"pattern": "test", "deduction": 10, "message": "test message"}]'
     response = client.post(
         f"/assignments/{assignment_name}/criteria",
         files={
             "criteria_file": (
-                "criteria.txt",
+                "criteria.json",
                 criteria_content.encode("utf-8"),
-                "text/plain"
+                "application/json"
             )
         }
     )
     assert response.status_code == 200
     assert response.json() == {"message": f"Criteria for {assignment_name} saved."}
+
+def test_upload_criteria_docx(client: TestClient):
+    assignment_name = "Test Assignment 3"
+    client.post("/assignments", json={"assignment_name": assignment_name})
+
+    document = docx.Document()
+    document.add_paragraph('[{"pattern": "test", "deduction": 10, "message": "test message"}]')
+    
+    file_stream = BytesIO()
+    document.save(file_stream)
+    file_stream.seek(0)
+
+    response = client.post(
+        f"/assignments/{assignment_name}/criteria",
+        files={
+            "criteria_file": (
+                "criteria.docx",
+                file_stream.read(),
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        }
+    )
+    assert response.status_code == 200
+    assert response.json() == {"message": f"Criteria for {assignment_name} saved."}
+
+def test_upload_criteria_invalid_file_type(client: TestClient):
+    assignment_name = "Test Assignment 4"
+    client.post("/assignments", json={"assignment_name": assignment_name})
+
+    response = client.post(
+        f"/assignments/{assignment_name}/criteria",
+        files={
+            "criteria_file": (
+                "criteria.pdf",
+                b"some pdf content",
+                "application/pdf"
+            )
+        }
+    )
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Invalid file type. Only .txt, .docx, and .json files are allowed."}
 
 def test_upload_criteria_docx(client: TestClient):
     assignment_name = "Test Assignment 3"
@@ -113,4 +154,4 @@ def test_upload_criteria_invalid_file_type(client: TestClient):
         }
     )
     assert response.status_code == 400
-    assert response.json() == {"detail": "Invalid file type. Only .txt and .docx files are allowed."}
+    assert response.json() == {"detail": "Invalid file type. Only .txt, .docx, and .json files are allowed."}

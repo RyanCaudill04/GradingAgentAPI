@@ -29,8 +29,8 @@ async def save_criteria(assignment_name: str, criteria_file: UploadFile, db: Ses
         db.refresh(assignment)
 
     file_extension = criteria_file.filename.split('.')[-1]
-    if file_extension not in ['txt', 'docx']:
-        raise HTTPException(status_code=400, detail="Invalid file type. Only .txt and .docx files are allowed.")
+    if file_extension not in ['txt', 'docx', 'json']:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only .txt, .docx, and .json files are allowed.")
 
     if file_extension == 'docx':
         try:
@@ -107,31 +107,39 @@ async def grade_assignment(request: GradingRequest, db: Session) -> dict:
             "grading_result": grading_result
         }
 
+import re
+import json
+
 async def _grade_with_gemini(source_files: list, criteria: str) -> dict:
-    prompt = """
-    Please grade the following Java code based on the provided criteria.
-    The criteria specifies deductions for certain issues.
-    Start with a grade of 100 and apply deductions as listed.
-    For each deduction, please specify the file, the issue, and the line number where the issue was found.
+    try:
+        grading_criteria = json.loads(criteria)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid criteria format. Criteria must be a valid JSON.")
 
-    Criteria:
-    ---
-    {criteria}
-    ---
+    grade = 100
+    feedback = ""
 
-    Source Code:
-    ---
-    """
     for file in source_files:
-        prompt += f"File: {file['path']}\n"
-        prompt += f"{file['content']}\n---\n"
+        file_path = file["path"]
+        content = file["content"]
+        lines = content.splitlines()
 
-    # Mocking a response from Gemini
-    print(prompt)
+        for criterion in grading_criteria:
+            pattern = criterion.get("pattern")
+            deduction = criterion.get("deduction")
+            message = criterion.get("message")
+
+            if not all([pattern, deduction, message]):
+                continue
+
+            for i, line in enumerate(lines, 1):
+                if re.search(pattern, line):
+                    grade -= deduction
+                    feedback += f"- {deduction} points: {message} in {file_path} on line {i}\n"
+
     return {
-        "grade": 90,
-        "feedback": "-10 points: Use of raw types in Factory.java line 25.",
-        "prompt": prompt # for debugging
+        "grade": grade,
+        "feedback": feedback.strip()
     }
 
 async def get_all_grades(db: Session):
