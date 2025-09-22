@@ -3,7 +3,7 @@ from pydantic import PostgresDsn
 
 class Settings(BaseSettings):
     ENV: str = "development"
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:8000"]
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:8000", "http://django:8000", "http://127.0.0.1:8000"]
 
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
