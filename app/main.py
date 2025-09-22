@@ -13,14 +13,9 @@ app = FastAPI()
 
 ENV = os.getenv("ENV", "development")
 
-if ENV == "production":
-    origins = ["https://your-frontend-domain.com"]
-else:
-    origins = ["http://localhost:8000"]
-
-app.add_middleware( 
+app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,  # or restrict to your frontend domain
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
